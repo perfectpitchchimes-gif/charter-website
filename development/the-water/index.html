@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The water — Charter</title>
+  <meta name="description" content="How Charter's ocean was built, from a three-wave prototype sea to a spectral FFT ocean with breaking crests, lingering foam, light through the water and reflections, with a live version of the game's sea to play with in the browser.">
+  <meta name="theme-color" content="#253d40">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23253d40'/%3E%3Ctext x='32' y='48' text-anchor='middle' font-family='Georgia' font-size='49' fill='%23e9e1cd'%3EC%3C/text%3E%3C/svg%3E">
+  <link rel="preload" href="/assets/fell-regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/devlog.css">
+  <script src="/site.js" defer></script><script src="/devlog.js" defer></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The water","description":"How Charter's ocean was built, from a three-wave prototype sea to a spectral FFT ocean with breaking crests, lingering foam, light through the water and reflections, with a live version of the game's sea to play with in the browser.","inLanguage":"en","isPartOf":{"@type":"Blog","name":"Charter development"},"about":{"@type":"VideoGame","name":"Charter","gamePlatform":"PC","playMode":"CoOp"}}</script>
+  <script type="importmap">{"imports":{"three":"/lib/three/three.module.min.js","three/addons/":"/lib/three/addons/"}}</script>
+  <script type="module" src="/ocean-demo.js"></script>
+  <link rel="canonical" href="https://playchartergame.com/development/the-water/">
+  <meta name="robots" content="index,follow">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Charter">
+  <meta property="og:title" content="The water — Charter">
+  <meta property="og:description" content="How Charter's ocean was built, from a three-wave prototype sea to a spectral FFT ocean with breaking crests, lingering foam, light through the water and reflections, with a live version of the game's sea to play with in the browser.">
+  <meta property="og:url" content="https://playchartergame.com/development/the-water/">
+  <meta property="og:image" content="https://playchartergame.com/assets/sailing.jpg">
+  <meta property="og:image:alt" content="Charter's fishing boat off a rocky coast beneath an overcast sky.">
+  <meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Charter home">Charter</a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="navigation">Menu <span aria-hidden="true">+</span></button>
+    <nav id="navigation" aria-label="Main navigation"><a href="/#the-game">The game</a><a href="/field-guide/">Field guide</a><a href="/development/" aria-current="page">Development</a><a href="/faq/">FAQ</a><a class="nav-cta" href="/#email-updates">Get updates</a></nav>
+  </header>
+  <main id="main" class="devlog-page layout-feature">
+    <header class="devlog-hero">
+      <video class="hero-video" muted loop playsinline autoplay preload="auto" poster="media/hero.jpg" aria-hidden="true"><source src="media/hero.mp4" type="video/mp4"></video>
+      <div class="hero-text">
+        <a class="devlog-back" href="/development/">← Development</a>
+        
+        <h1>The water</h1>
+        <p class="devlog-deck">How the sea in Charter went from three sine waves to a simulated ocean that breaks, foams and lets the light through.</p>
+      </div>
+    </header>
+    <article class="devlog-body">
+<p class="lede">In a fishing game the sea fills most of the screen for most of the trip, so it carries a lot: the weather, the mood of a day out, how hard it is to keep your feet on deck and where the fish might be. It has been rebuilt more times than almost anything else in Charter, and the version further down this page runs in your browser on the game’s own wave recipe, with the real ship floating on it, so you can take it from a flat calm to a storm yourself.</p>
+
+<h2 id="three-sine-waves">Three sine waves</h2>
+<figure class="media wide"><img src="media/first-sea.jpg" alt="The first prototype's sea, seen past the rod: smooth teal water in painted bands and a few flat-topped islands." width="960" height="330" loading="lazy"></figure>
+<p>The first sea was three sine waves added together, each rolling in a slightly different direction at its own speed, with the colour painted in bands to give it a low-poly look. For a prototype about casting a line that was enough, but nothing about it suggested weight or weather. Every swell was as tall as the one before, the pattern repeated if you watched it for long, and the boat was simply set on top of it, its height and tilt read from the water at a few points under the hull.</p>
+<p>The first rounds of work on it were about appearance. A look study pulled the colour away from bright aquarium teal toward the slate and grey-green of a northern sea under cloud, added layered detail to the surface and broke the foam up along the crests. Then the waves went from three to eight, crossing at different lengths with sharper crests and broader troughs, and the hull was made to heave and pitch harder. It was a real improvement and it still looked smooth and weightless, a little like a sheet being shaken from one edge, because a handful of regular waves can’t make the lumpy, confused surface a real sea has.</p>
+<figure class="compare wide" data-compare>
+<div class="compare-frames"><img src="media/look-before.jpg" alt="The prototype sea from the deck: bright teal water with soft painted highlights." width="1697" height="1061" loading="lazy" data-frame="before"><img src="media/look-after.jpg" alt="The same view after the look study: slate water, a grey overcast sky and finer surface detail." width="1697" height="1061" loading="lazy" data-frame="after"></div>
+<div class="compare-controls" role="group" aria-label="Choose a version"><button type="button" aria-pressed="true" data-show="before">Before</button><button type="button" aria-pressed="false" data-show="after">After the look study</button></div>
+<figcaption>The same view before and after the look study, while the waves were still a handful of sines.</figcaption>
+</figure>
+
+<h2 id="a-sea-built-from-a-recipe">A sea built from a recipe</h2>
+<p>A real sea is thousands of waves at once. There’s long swell that has travelled from a storm far away, shorter waves raised by the wind overhead and everything in between, and each one moves at the speed its length dictates, so the long ones keep overtaking the short ones and the surface never repeats. Oceanographers measured how that energy is spread across wavelengths during the Joint North Sea Wave Project, and the result, the JONSWAP spectrum, tells you how much of each wavelength to expect for a given wind speed and the distance it has blown across open water. Jerry Tessendorf described how to build film water from a spectrum like this around the turn of the century, and what makes it practical is the fast Fourier transform, which turns the whole recipe into a height map of the surface in one pass instead of adding waves up one at a time.</p>
+<p>Charter’s sea is built on <a href="https://github.com/2Retr0/GodotOceanWaves">GodotOceanWaves</a>, 2Retr0’s open-source ocean for Godot, which does this on the graphics card. The game runs two layers of it: a long swell on a grid 88 metres across, and a shorter wind chop on a 57 metre grid that crosses the swell at an angle. The surface moves sideways as well as up and down, so crests bunch together and sharpen while troughs stretch out flat, the way real ones do. The four sea states, from Calm to Extreme, are recipes for those two layers covering wind speed, wave height, how sharp the crests get and when they start to break, and the weather slides between them continuously.</p>
+<figure class="ocean-demo bleed" data-ocean-demo data-ship="media/ship.glb" data-sea="0.75">
+  <div class="ocean-stage">
+    <canvas aria-label="A live ocean with Charter's ship riding on it. Drag to look around."></canvas>
+    <p class="ocean-loading">Loading the ship</p>
+    <div class="ocean-ui">
+      <div class="ocean-group">
+        <span class="ocean-label">Sea</span>
+        <div class="ocean-seg"><button type="button" data-sea-mode="first" aria-pressed="false">The first sea</button><button type="button" data-sea-mode="today" aria-pressed="true">Today</button></div>
+      </div>
+      <label class="ocean-group ocean-sea">
+        <span class="ocean-label">Sea state <b data-state>Everyday</b></span>
+        <input type="range" min="0" max="1.5" step="0.01" value="0.75" aria-label="Sea state, calm to extreme">
+        <span class="ocean-ticks" aria-hidden="true"><span>Calm</span><span>Everyday</span><span>Rough</span><span>Extreme</span></span>
+      </label>
+      <div class="ocean-group">
+        <span class="ocean-label">Wave layers</span>
+        <div class="ocean-seg"><button type="button" data-layer="swell" aria-pressed="false">Swell</button><button type="button" data-layer="chop" aria-pressed="false">Wind chop</button><button type="button" data-layer="both" aria-pressed="true">Both</button></div>
+      </div>
+      <div class="ocean-group ocean-spectrum">
+        <canvas width="32" height="32" aria-hidden="true"></canvas>
+        <span class="ocean-label">The recipe</span>
+      </div>
+      <button type="button" class="ocean-pause" data-pause>Pause</button>
+    </div>
+  </div>
+  <figcaption>The game’s wave recipe, sea states and foam rules running in your browser, with the ship riding on top. Drag to look around and scroll or pinch to zoom. The small square is the recipe itself: each pixel is one wave, and the brighter it is, the taller.</figcaption>
+</figure>
+
+<p>Drag the sea state from Calm to Extreme and the recipe changes underneath while the same waves keep running, growing and steepening until the crests start to turn white. If you turn a layer off, the swell on its own is long and orderly, almost hypnotic, and the chop on its own is a busy ripple going nowhere, and it takes the two crossing each other to get the uneven surface of the real thing. The first sea button switches back to the original three sines, ported exactly, which is the quickest way to see what changed. The browser version is cut down from the game’s: it computes a much coarser grid on the processor where the game uses a fine one on the graphics card, so the smallest detail is softer, and it leaves out refraction, reflections and spray.</p>
+<figure class="media wide"><video class="loop" muted loop playsinline preload="none" poster="media/rise.jpg" aria-label="The sea around the ship rising from a calm to a storm sea at three times speed"><source src="media/rise.mp4" type="video/mp4"></video><figcaption>The same water going from Calm to Extreme, at three times speed.</figcaption></figure>
+<p>In the game the weather never swaps one sea for another. When conditions change, the recipe slides from one state to the next while the waves carry on, and the two layers move at different paces: the wind chop builds and dies quickly, while the swell takes longer to arrive and hangs around after the wind has dropped, which is what a real sea does after a blow. Each player’s game builds the sea from the same recipe, seed and clock, so the waves themselves never travel over the network. The whole crew sees the same swell lift the bow at the same moment, and someone who joins in the middle of a storm can rebuild it from the current conditions alone.</p>
+<h2 id="whitecaps-and-foam-that-stays">Whitecaps and foam that stays</h2>
+<p>The foam comes out of the same maths. Because the surface moves sideways as well as up, water bunches together at a steep crest, and how hard it’s being squeezed can be measured everywhere at once. Where it’s squeezed past a threshold the crest turns white, and that foam is written into a map that fades over a few seconds, so a breaking crest leaves a patch behind it that drifts and thins out instead of vanishing the moment the wave has passed.</p>
+<figure class="media wide"><video class="loop" muted loop playsinline preload="none" poster="media/foam.jpg" aria-label="Looking straight down at a rough sea as whitecaps form on the steepest crests and fade behind them"><source src="media/foam.mp4" type="video/mp4"></video></figure>
+<p>Getting the amount right took several rounds. The first version left contour lines of foam repeating across the whole sea, and turning the foam up to compensate covered large areas in flat white sheets, which looked like snow on a field. What works is keeping fresh foam bright and confined to crests that are actually breaking, then letting what’s left over break up into sparse flecks that erode as they drift. Each sea state has its own point at which crests begin to break, so a calm day has almost none and an extreme sea is streaked with it.</p>
+<figure class="compare wide" data-compare>
+<div class="compare-frames"><img src="media/foam-before.jpg" alt="Looking down at the water behind a crest with the leftover foam hidden: an even, smooth surface." width="1920" height="1080" loading="lazy" data-frame="before"><img src="media/foam-after.jpg" alt="The same view with broken patches of foam left behind by the crest." width="1920" height="1080" loading="lazy" data-frame="after"></div>
+<div class="compare-controls" role="group" aria-label="Choose a version"><button type="button" aria-pressed="true" data-show="before">Trail hidden</button><button type="button" aria-pressed="false" data-show="after">Trail shown</button></div>
+<figcaption>The same moment in the prototype with the leftover foam behind a crest hidden and shown.</figcaption>
+</figure>
+
+<figure class="gallery wide"><div class="gallery-grid" style="--min:420px"><img src="media/fft-breakers.jpg" alt="The FFT prototype's Extreme sea in sunshine, with white breaking crests around a small placeholder boat." width="1920" height="1080" loading="lazy"><img src="media/fft-overcast.jpg" alt="The same sea under overcast light." width="1920" height="1080" loading="lazy"></div><figcaption>The first Extreme sea, in the standalone prototype that tested the new ocean before it went into the game. The boat is a placeholder.</figcaption></figure>
+<p>The standalone prototype also turned out to be too fast. Waves of that size in a real sea move with a slow, heavy roll, and the first version raced, so the whole sea was slowed twice before it felt right, and the slower pace is a large part of why it looks heavy now.</p>
+<figure class="media wide"><video class="loop" muted loop playsinline preload="none" poster="media/storm.jpg" aria-label="A thunderstorm sea seen from low on the water, with swells passing in front of the ship"><source src="media/storm.mp4" type="video/mp4"></video></figure>
+<h2 id="light-through-the-water">Light through the water</h2>
+<p>A lot of what makes water look like water is the way light gets into it. Look across the sea toward a low sun and the thin top of a wave lets the light through and glows green. The water material looks for crests that are both lifted and being squeezed, and adds that glow only there, so flat water and foam don’t light up with it.</p>
+<figure class="media wide"><video class="loop" muted loop playsinline preload="none" poster="media/crest.jpg" aria-label="Backlit swells at sunset, with a light coming through the thinner wave faces and gulls over an island"><source src="media/crest.mp4" type="video/mp4"></video></figure>
+<p>Close to the boat the surface is partly see-through. For every point on the water the shader works out how far light has to travel through the water to reach whatever is beneath it and fades the view with that distance, losing red light first, which is what real water does. A fish under the hull is clearly visible, and the same fish a few metres down is a shadow. Different stretches of coast can use different water, from clear offshore blue to the greener, murkier water of a plankton-rich coast.</p>
+<figure class="gallery wide"><div class="gallery-grid" style="--min:420px"><img src="media/shallows.jpg" alt="Looking down through clear water at fish over weed in Greywick's shallows" width="1920" height="1080" loading="lazy"><img src="media/hull-below.jpg" alt="The ship's hull in a rough sea, its paint visible through the water below the waterline" width="1920" height="1080" loading="lazy"></div></figure>
+<p>From below, the surface shows the sky only in a circle directly overhead and acts as a mirror everywhere else, which is called Snell’s window, and the underside of the waves is drawn to behave the same way.</p>
+<figure class="media wide"><img src="media/underwater.jpg" alt="Under the surface in Greywick, looking up at a rippled ceiling of water with a hull and fish against it" width="1920" height="1080" loading="lazy"></figure>
+<p>Reflections were the last piece. The water always reflected the sky, but it didn’t reflect the hull or the cliffs, so the ship sat over plain reflected sky. Now each reflected ray looks for the hull or the coast where they’re already drawn on screen and reflects them where it finds them, falling back to the sky everywhere else.</p>
+<figure class="compare wide" data-compare>
+<div class="compare-frames"><img src="media/reflect-before.jpg" alt="The ship's side in calm water, with only the sky reflected under it." width="1920" height="1080" loading="lazy" data-frame="before"><img src="media/reflect-after.jpg" alt="The same view with the hull and its red stripe reflected in the water." width="1920" height="1080" loading="lazy" data-frame="after"></div>
+<div class="compare-controls" role="group" aria-label="Choose a version"><button type="button" aria-pressed="true" data-show="before">Sky only</button><button type="button" aria-pressed="false" data-show="after">Hull and coast reflected</button></div>
+</figure>
+
+<figure class="media wide"><video class="loop" muted loop playsinline preload="none" poster="media/calm.jpg" aria-label="Skimming low over calm morning water toward the moored ship, its hull reflected in the surface"><source src="media/calm.mp4" type="video/mp4"></video></figure>
+<p>The low-poly look up close is deliberate. The water blends the lighting of the actual triangles into the smooth wave shading, so near the boat you see flat facets catching the light, and the blend fades out with distance before the triangles get small enough to shimmer.</p>
+<h2 id="the-ship-on-the-same-sea">The ship on the same sea</h2>
+<p>The ship, the float on your line and anyone in the water all take their heights from the waves the graphics card actually draws. With the old ocean the physics used the smooth wave formula while the screen showed a mesh of triangles stretched over it, and the two never quite agreed, so things that touched the water needed patching to sit on what you could see. Reading the drawn surface back keeps the hull, the float and anyone swimming on exactly the water you see.</p>
+<figure class="gallery wide"><div class="gallery-grid"><video class="loop" muted loop playsinline preload="none" poster="media/bow.jpg" aria-label="Chasing the ship at full ahead through a rough sea as the bow throws up spray"><source src="media/bow.mp4" type="video/mp4"></video><video class="loop" muted loop playsinline preload="none" poster="media/deck.jpg" aria-label="Standing at the bow at full ahead, the horizon pitching and rolling as the ship rides the swell"><source src="media/deck.mp4" type="video/mp4"></video></div></figure>
+<p>Next for the water is the length and period of the waves, which are tuned for looks at the moment and will be compared carefully against how the ship handles, and the underwater side of Greywick, which hasn’t had the attention the surface has.</p>
+    </article>
+    <div class="devlog-end"><a href="/development/">All development posts</a><a href="/#email-updates">Get updates by email</a></div>
+  </main>
+  <footer class="site-footer"><a class="footer-brand" href="/">Charter</a><p>A co-operative fishing game.<br>In development for Windows PC.</p><div class="footer-links"><a href="/field-guide/">Field guide</a><a href="/faq/">FAQ</a><a href="/credits/">Credits</a></div></footer>
+</body>
+</html>

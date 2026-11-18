@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The first fishing prototype — Charter devlog 1</title>
+  <meta name="description" content="How Charter's first fishing prototype worked: a tracking-and-reeling fight, a float and rod driven by springs, a simulated fishing line, a fish that wouldn't go back overboard, and an interface that explained far too much.">
+  <meta name="theme-color" content="#253d40">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23253d40'/%3E%3Ctext x='32' y='48' text-anchor='middle' font-family='Georgia' font-size='49' fill='%23e9e1cd'%3EC%3C/text%3E%3C/svg%3E">
+  <link rel="preload" href="/assets/fell-regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/devlog.css">
+  <script src="/site.js" defer></script><script src="/devlog.js" defer></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The first fishing prototype","description":"How Charter's first fishing prototype worked: a tracking-and-reeling fight, a float and rod driven by springs, a simulated fishing line, a fish that wouldn't go back overboard, and an interface that explained far too much.","inLanguage":"en","isPartOf":{"@type":"Blog","name":"Charter development"},"about":{"@type":"VideoGame","name":"Charter","gamePlatform":"PC","playMode":"CoOp"}}</script>
+  <link rel="canonical" href="https://playchartergame.com/development/first-fishing-prototype/">
+  <meta name="robots" content="index,follow">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Charter">
+  <meta property="og:title" content="The first fishing prototype — Charter devlog 1">
+  <meta property="og:description" content="How Charter's first fishing prototype worked: a tracking-and-reeling fight, a float and rod driven by springs, a simulated fishing line, a fish that wouldn't go back overboard, and an interface that explained far too much.">
+  <meta property="og:url" content="https://playchartergame.com/development/first-fishing-prototype/">
+  <meta property="og:image" content="https://playchartergame.com/assets/sailing.jpg">
+  <meta property="og:image:alt" content="Charter's fishing boat off a rocky coast beneath an overcast sky.">
+  <meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Charter home">Charter</a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="navigation">Menu <span aria-hidden="true">+</span></button>
+    <nav id="navigation" aria-label="Main navigation"><a href="/#the-game">The game</a><a href="/field-guide/">Field guide</a><a href="/development/" aria-current="page">Development</a><a href="/faq/">FAQ</a><a class="nav-cta" href="/#email-updates">Get updates</a></nav>
+  </header>
+  <main id="main" class="devlog-page">
+    <header class="devlog-masthead">
+      <a class="devlog-back" href="/development/">← Development</a>
+      <p class="devlog-number">Devlog 1</p>
+      <h1>The first fishing prototype</h1>
+      <p class="devlog-deck">How the first version of the fishing worked, and what it got wrong.</p>
+    </header>
+    <article class="devlog-body">
+<p>Charter is a co-op fishing game about taking a boat out with friends: finding fish, fighting them on the line and dealing with them once they’re loose on deck. In these posts I’m going to walk through how it’s being made, starting from the very first version, and explain the interesting parts as I go. There will be code for anyone who wants it, but you don’t need to read it to follow along.</p>
+<p>That first version was a single fishing station on a small open boat, on a sea made from three sine waves. Here it is from the cast to the catch. Watch the very end, where the fish is supposed to go back overboard.</p>
+<figure class="media wide"><video controls playsinline preload="none" poster="media/first-bite.jpg" aria-label="The first prototype: casting, a bite, the fight, landing a mackerel and trying to throw it back"><source src="media/first-bite.mp4" type="video/mp4"></video></figure>
+<h2 id="following-the-fish">Following the fish</h2>
+<p>The fishing is based on Rye’s video <a href="https://www.youtube.com/watch?v=_QQRHeS8wNQ">I Made a Game to Face my Fear of Fish</a>, about making <a href="https://ryegame.itch.io/keep-on-fishn">Keep on Fish’n</a>. If you haven’t seen it, the idea is simple. The fish moves left and right along a bar, you steer a window with A and D to stay over it, and you reel with Space. What makes it work is that the reel is never locked. You can wind in whenever you like; you just pay for it in tension if you’re not lined up.</p>
+<p>I got that part wrong at first. When I described what I wanted, I wrote that you “can only reel when marker is on fish icon.” Rye’s version is looser than that, and it’s better. Because the reel is always available, you’re making a small decision every second of the fight: am I lined up well enough to risk it?</p>
+<figure class="media wide"><video class="loop" muted loop playsinline preload="none" poster="media/fight.jpg" aria-label="The fight in the first prototype, with the tracking bar and a bending rod"><source src="media/fight.mp4" type="video/mp4"></video><figcaption>The mint window follows A and D. The diamond is the fish.</figcaption></figure>
+<p>How the fish moves along that bar matters more than you might expect. If it jumped around randomly you couldn’t track it, only react to it, and the fight would feel like luck. So its position is a slow, wide sine wave with a faster, smaller one added on top:</p>
+<pre class="code" data-lang="gdscript"><code>target = clampf(<span class="tok-number">0.5</span> + sin(fight_time * <span class="tok-number">1.25</span> + offset) * <span class="tok-number">0.28</span>
+		+ sin(fight_time * <span class="tok-number">2.3</span>) * <span class="tok-number">0.08</span>, <span class="tok-number">0.08</span>, <span class="tok-number">0.92</span>)</code></pre>
+<p>The comment above that line in the original script says the two frequencies “produce a learnable, smooth fish rather than frame-random motion.” Play for a few seconds and you start leading it, the way you’d lead a moving target, with the small wave keeping you honest. The offset comes from the sea’s seed, so every sea has its own pattern. On top of Rye’s design, the prototype gave you a 2.4-second window to strike once the float dips, and made the fish run every six and a half seconds, when even well-aligned reeling adds tension.</p>
+<p>Everything else comes from the two inputs working against each other. It’s easiest to see as a table. Tension runs from 0 to 1, the line snaps at 1, and the numbers are changes per second.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Reeling</th>
+<th>Not reeling</th>
+</tr>
+</thead>
+<tbody><tr>
+<td data-label=""><strong>Over the fish</strong></td>
+<td data-label="Reeling">The line comes in at 1.45 m/s, up to 30 percent faster as the fish tires. Tension eases slowly (−0.075) but climbs during a run (+0.12).</td>
+<td data-label="Not reeling">Tension eases quickly (−0.3). The fish takes back 0.35 m/s of line.</td>
+</tr>
+<tr>
+<td data-label=""><strong>Off the fish</strong></td>
+<td data-label="Reeling">Tension climbs fast (+0.27). From where a fight starts, that snaps the line in about three seconds. The fish takes 0.32 m/s.</td>
+<td data-label="Not reeling">Tension creeps up (+0.055). The fish takes 0.7 m/s, twice as much as when you’re over it.</td>
+</tr>
+</tbody></table></div>
+<p>The bottom-right cell is a good example of how much a tiny rule can change. Originally, letting go of Space relieved tension no matter where your window was. That sounds harmless, but it meant the safest thing to do in a bad moment was stop reeling and stop paying attention. Now strain keeps building slowly while you’re off the fish, as it does in Rye’s game, so you always have a reason to stay on it. Reeling on target was also slowed, from 2.5 to 1.45 meters per second, which makes a fight last noticeably longer.</p>
+<p>If you’re building something like this yourself, here’s the decision I’d copy: keep the rules in one small script that has no idea what anything looks like. Charter’s fishing model is handed your steering, the reel button and the wave load every physics step, through <code>model.update(dt, steer, reel, wave_load)</code>, and works out the distance, the fish’s stamina and the tension. The scene just reads those numbers to place the fish and bend the rod. Nothing drawn on screen can land or lose a fish. The payoff comes quickly. A replay can feed recorded input through the same call as the keyboard, and with a fixed seed the fish does exactly the same thing every time, so when you change a number you can watch the same fight again and see what the change did. The fishing has been rebuilt several times since, and that split has survived all of it.</p>
+<h2 id="the-rod-the-float-and-the-line">The rod, the float and the line</h2>
+<p>If you snap a float straight to the water height, it looks glued to the surface. Real floats have some weight to them. They dip, overshoot a little and settle. The easiest way to fake that is a spring. Picture the float on a rubber band tied to the water: the further it strays, the harder it’s pulled back, and a little friction stops it bouncing forever. In code, that’s two lines:</p>
+<pre class="code" data-lang="gdscript"><code>float_velocity += ((desired_y - float_y) * <span class="tok-number">90</span> - float_velocity * <span class="tok-number">11</span>) * dt
+float_y += float_velocity * dt</code></pre>
+<p>The first number is how stiff the band is and the second is the friction. With these values a float overshoots by about a tenth and is still in under a second. When a cast lands, the float starts slightly below its resting height and already sinking, so it ducks and bobs back up on its own. The bite doesn’t have an animation either. It pulls the float’s target down 22 centimeters and shakes it about three and a half times a second, and the spring turns that into the twitch you’re watching for in the clip below.</p>
+<p>The rod uses the same trick. Its bend chases a target of a base amount plus the line tension, so the harder the fish pulls, the further the tip comes down, and you can read the fight from the rod without looking at the bar. The bend grows with the cube of the distance along the rod, which keeps the butt stiff and puts most of the curve in the tip, like a real rod. It also leans toward the fish, which was on my original list of things I wanted from the reference: “rod moves with fish.”</p>
+<figure class="media wide"><video class="loop" muted loop playsinline preload="none" poster="media/bite.jpg" aria-label="Waiting for a bite, the bite, and the strike, after which the rod bends"><source src="media/bite.mp4" type="video/mp4"></video><figcaption>Waiting, the bite and the strike. When the fight starts, the rod’s target bend jumps and its spring carries it down.</figcaption></figure>
+<p>The line took more work. The first version was a curve drawn from the rod tip to the float with a sag in the middle, and it looked fine in screenshots and wrong in motion. It had no memory, so whenever the float moved, the whole curve jumped to its new shape in a single frame. Real line lags, swings and settles.</p>
+<p>Its replacement is 21 points joined by 20 segments. Think of beads on a thread: each bead keeps drifting the way it was already going, gravity pulls it down, and the thread stops neighboring beads from drifting too far apart. The drifting part is these three lines. Each point remembers where it was last step, and the difference between then and now is its velocity:</p>
+<pre class="code" data-lang="gdscript"><code><span class="tok-keyword">var</span> pos := points[i]
+points[i] += (points[i] - previous[i]) * <span class="tok-number">0.91</span> + <span class="tok-type">Vector3</span>.<span class="tok-type">DOWN</span> * <span class="tok-number">7.0</span> * dt * dt
+previous[i] = pos</code></pre>
+<p>This is called Verlet integration, and it’s the standard way to do rope and cloth in games. The 0.91 bleeds off a little speed each step so the line doesn’t swing forever. After that, 18 quick passes nudge each pair of neighbors back to the right spacing, with the ends pinned to the rod tip and the float. Tension decides what “right” means: a slack line gets 5.5 percent more length than the straight distance between its ends, so it can sag, and a taut one gets 0.2 percent, so it pulls straight.</p>
+<p>Try it here. Drag the float somewhere and let go, and you’ll see the whip that the old curve couldn’t do. Then switch to the original curve and do the same thing.</p>
+<figure class="demo wide" data-line-demo>
+<div class="demo-stage"><canvas role="img" aria-label="A fishing line hanging from a rod tip to a float on moving water. Drag the float to move the line."></canvas></div>
+<div class="demo-controls">
+<label class="demo-range">Tension <input type="range" min="0" max="1" step="0.01" value="0" data-tension> <output data-tension-value>0.00</output></label>
+<button type="button" data-drop>Drop the float</button>
+<label class="demo-check"><input type="checkbox" data-original> Original curve</label>
+</div>
+<figcaption>The prototype’s line algorithm and constants, with the float on its spring and a slice of its water.</figcaption>
+</figure>
+
+<p>The line is purely for looks, by the way. How far it stretches has nothing to do with whether you keep the fish. That’s the fishing model’s job.</p>
+<h2 id="the-sea">The sea</h2>
+<p>Here’s a trick worth knowing. The water is three sine waves running in different directions, and the same formula runs in two places: in the shader that draws the surface, and in a script the boat and float use to ask how high the water is at any point. As long as the two agree, the float sits on the water you can see. If they drift apart, the float hovers or sinks and nothing else you do will fix it. Charter’s water is far more complicated now, but it still keeps that rule.</p>
+<p>The boat rises and falls with the height under its center and tilts by comparing heights across its width and length. That isn’t buoyancy, but this boat never went anywhere, so faking it was fine. The boat itself came from a Blender script that builds it out of boxes, cylinders and one custom hull: a faceted teal hull with a coral stripe, deck planks, a bench, canopy supports and a mint cooler with a latch. If you’ve ever brought a model into a game engine and found it lying on its back, this is why the script converts every position on the way in. Godot’s up axis is Y and Blender’s is Z, so a point at (x, y, z) in the game becomes (x, −z, y) in Blender.</p>
+<p>The first render was far too bright. Lowering the light and changing the tone mapping pulled it back, and the same pass changed how the rod bends and gave the line its physics.</p>
+<figure class="compare wide" data-compare>
+<div class="compare-frames"><img src="media/render-before.jpg" alt="The first render: pale cyan water, bright highlights and a straight rod." width="1280" height="800" loading="lazy" data-frame="before"><img src="media/render-after.jpg" alt="After the lighting pass: darker teal water and a rod bent under load." width="1280" height="800" loading="lazy" data-frame="after"></div>
+<div class="compare-controls" role="group" aria-label="Choose a frame"><button type="button" aria-pressed="true" data-show="before">Before</button><button type="button" aria-pressed="false" data-show="after">After</button></div>
+</figure>
+
+<h2 id="throwing-it-back">Throwing it back</h2>
+<p>So, the end of the recording. Q is supposed to throw the fish back into the sea. Instead it lifts, hits the seat and drops back onto the deck.</p>
+<figure class="gallery wide"><div class="gallery-grid" style="--min:160px"><img src="media/throw-1.jpg" alt="The mackerel lying on deck before the throw" width="560" height="320" loading="lazy"><img src="media/throw-2.jpg" alt="The mackerel lifting against the seat" width="560" height="320" loading="lazy"><img src="media/throw-3.jpg" alt="The mackerel turning against the top of the seat" width="560" height="320" loading="lazy"><img src="media/throw-4.jpg" alt="The mackerel back down behind the bench" width="560" height="320" loading="lazy"></div></figure>
+<p>A throw sounds like one line of code. It took four fixes. The throw went wherever the camera was pointing, and since you’re usually looking down at a fish when you pick it up, it went straight into the deck. It now uses the direction you’re facing and ignores where you’re looking up or down, with a fixed 8 meters per second forward and 8 up. It also cancels whatever the fish was already doing, so a fish caught mid-flop doesn’t leave with the flop added on top. A fish lying against the seat could still clip it on the way up, so the throw now starts from a point by the rail.</p>
+<p>The last fix is a Godot trap that’s worth knowing if you use the engine. Setting a physics object’s position or velocity from ordinary game code can fight with the physics engine, and Godot’s documentation recommends doing it inside the body’s own physics callback, <code>_integrate_forces</code>, instead. So the throw is queued up and applied there:</p>
+<pre class="code" data-lang="gdscript"><code><span class="tok-keyword">func</span> _integrate_forces(state: <span class="tok-type">PhysicsDirectBodyState3D</span>) -&gt; void:
+	<span class="tok-keyword">if</span> launch_pending:
+		state.transform = <span class="tok-type">Transform3D</span>(<span class="tok-type">Basis</span>.<span class="tok-type">IDENTITY</span>, launch_position)
+		state.linear_velocity = launch_velocity
+		state.angular_velocity = <span class="tok-type">Vector3</span>(<span class="tok-number">1</span>, <span class="tok-number">0</span>, <span class="tok-number">0.6</span>)
+		state.sleeping = <span class="tok-keyword">false</span>
+		launch_pending = <span class="tok-keyword">false</span></code></pre>
+<p>The automated test for the throw had its own lesson. It passed as long as the fish was moving fast afterwards, and a fish bouncing off a seat is moving fast. It now checks that the fish has actually cleared the bow and isn’t touching the boat. The recording was made before the last of these fixes.</p>
+<h2 id="the-fish-on-deck">The fish on deck</h2>
+<p>Once it’s landed, the fish becomes a rigid body with its own weight as its mass. Every 1.4 seconds, if it’s touching something, it gets a small push upward and a twist, and in between, the model rocks side to side on a fast sine wave. That’s the whole flop:</p>
+<pre class="code" data-lang="gdscript"><code><span class="tok-keyword">if</span> model.clock - last_flop &gt; <span class="tok-number">1.4</span> <span class="tok-keyword">and</span> catch_body.get_contact_count() &gt; <span class="tok-number">0</span>:
+	last_flop = model.clock
+	catch_body.apply_central_impulse(<span class="tok-type">Vector3</span>.<span class="tok-type">UP</span> * <span class="tok-number">1.25</span>)
+	catch_body.apply_torque_impulse(<span class="tok-type">Vector3</span>(<span class="tok-number">0.08</span>, <span class="tok-number">0</span>, <span class="tok-number">0.18</span>))</code></pre>
+<figure class="media wide"><video class="loop" muted loop playsinline preload="none" poster="media/landing.jpg" aria-label="The mackerel arcing out of the water onto the deck and flopping beside the seat"><source src="media/landing.mp4" type="video/mp4"></video></figure>
+<p>Four lines, and it was my favorite part. Here’s what I wrote after playing it:</p>
+<blockquote>
+<p>Best was the feel of the fish itself flopping around on deck, overall solid first pass on fishing. Worst was definitely the overexplanatory and uninspired UI.</p>
+</blockquote>
+<p>The interface earned that. Every step of a catch had its own panel, with a headline, an instruction underneath and a row of numbered steps, while the same key hints ran along the bottom of the screen the whole time. The headlines were written like a fishing buddy talking you through it, and they never stopped.</p>
+<figure class="gallery wide"><div class="gallery-grid" style="--min:420px"><img src="media/prompt-1.jpg" alt="Good morning, skipper. Hold left click to load your cast." width="680" height="175" loading="lazy"><img src="media/prompt-2.jpg" alt="Send it. Release left click, 12 meter cast." width="680" height="175" loading="lazy"><img src="media/prompt-3.jpg" alt="Out she goes. Keep an eye on the float." width="680" height="175" loading="lazy"><img src="media/prompt-4.jpg" alt="Something's down there. Wait for the dip, then tap Space to set the hook." width="680" height="175" loading="lazy"><img src="media/prompt-5.jpg" alt="FISH ON! Tap Space now to set the hook!" width="680" height="175" loading="lazy"><img src="media/prompt-6.jpg" alt="It's making a run! Ease off if tension rises." width="680" height="175" loading="lazy"><img src="media/prompt-7.jpg" alt="Catch landed. Mackerel, 3.0 kilograms. Charter complete. That's dinner sorted." width="680" height="175" loading="lazy"><img src="media/prompt-8.jpg" alt="The one that got away. Next cast is yours. Line snapped." width="680" height="175" loading="lazy"></div><figcaption>One catch, start to finish, plus the screen you got when the line snapped.</figcaption></figure>
+<p>Both notes shaped what came next. The flop grew into a fish with a jointed body that bends and flops properly, and the interface went in the bin. If there’s anything here you’d like me to dig into further, or something about the game you’d like to see covered, let me know. Next time, a second player comes aboard.</p>
+    </article>
+    <div class="devlog-end"><a href="/development/">All development posts</a><a href="/#email-updates">Get updates by email</a></div>
+  </main>
+  <footer class="site-footer"><a class="footer-brand" href="/">Charter</a><p>A co-operative fishing game.<br>In development for Windows PC.</p><div class="footer-links"><a href="/field-guide/">Field guide</a><a href="/faq/">FAQ</a><a href="/credits/">Credits</a></div></footer>
+</body>
+</html>
