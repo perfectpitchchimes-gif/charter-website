@@ -114,3 +114,12 @@ body{background-image:linear-gradient(#ece5d3b8,#ece5d3b8),url('/assets/paper.we
 .site-footer{flex-wrap:wrap;padding:44px 0 36px;row-gap:22px}
 .footer-social{flex-basis:100%;display:flex;flex-wrap:wrap;gap:4px 26px;padding-top:18px;border-top:1px solid var(--rule);font:14px/1.6 Fell,Georgia,serif}
 .footer-social a{padding:8px 0}
+/* Screenshots: a grid of stills, each opening its full-size file. */
+.shots{padding-top:20px}
+.shots h2{padding:0 0 38px}
+.shots-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.shots-grid a{display:block;background:var(--sea)}
+.shots-grid img{display:block;width:100%;height:auto;transition:opacity .2s}
+.shots-grid a:hover img{opacity:.88}
+@media(max-width:1000px){.shots-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.shots h2{font-size:43px;padding-bottom:26px}}
+@media(prefers-reduced-motion:reduce){.shots-grid img{transition:none}}
