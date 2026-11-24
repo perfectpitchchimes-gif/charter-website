@@ -14,26 +14,40 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && menu?.getAttribute('aria-expanded') === 'true') { closeMenu(); menu.focus(); }
 });
 
-// Hero sea motion
+// Hero sea motion (auto-pauses when scrolled out of view so it never contends with lower loops)
+const heroSection = document.querySelector('.hero');
 const motion = document.querySelector('.hero-motion');
 const motionButton = document.querySelector('.motion-toggle');
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-let motionLoaded = false;
+let motionLoaded = false, heroWanted = false, heroVisible = true;
 async function setMotion(play) {
   if (!motion || !motionButton) return;
-  if (play && !reduced.matches) {
+  heroWanted = !!(play && !reduced.matches);
+  if (heroWanted) {
     if (!motionLoaded) { const source = motion.querySelector('source'); source.src = source.dataset.src; motion.load(); motionLoaded = true; }
-    try { await motion.play(); motion.classList.add('playing'); motionButton.textContent = 'Pause sea motion'; motionButton.setAttribute('aria-pressed', 'true'); }
-    catch { motionButton.textContent = 'Play sea motion'; }
+    try {
+      if (heroVisible) await motion.play();
+      motion.classList.add('playing');
+      motionButton.textContent = 'Pause sea motion';
+      motionButton.setAttribute('aria-pressed', 'true');
+    } catch { motionButton.textContent = 'Play sea motion'; }
   } else {
     motion.pause(); motion.classList.remove('playing');
     motionButton.textContent = reduced.matches ? 'Motion reduced' : 'Play sea motion';
     motionButton.setAttribute('aria-pressed', 'false');
   }
 }
-motionButton?.addEventListener('click', () => setMotion(motion.paused));
+motionButton?.addEventListener('click', () => setMotion(!heroWanted));
 reduced.addEventListener('change', () => { if (motionButton) motionButton.disabled = reduced.matches; setMotion(false); });
 if (motionButton) { motionButton.disabled = reduced.matches; if (reduced.matches) motionButton.textContent = 'Motion reduced'; }
+if (heroSection && motion && 'IntersectionObserver' in window) {
+  new IntersectionObserver(entries => {
+    heroVisible = entries[0].isIntersecting;
+    if (!heroWanted) return;
+    if (heroVisible) motion.play().catch(() => {});
+    else motion.pause();
+  }, { threshold: 0.05 }).observe(heroSection);
+}
 if (motion && window.matchMedia('(min-width: 701px)').matches && !reduced.matches && !navigator.connection?.saveData) {
   window.addEventListener('load', () => setMotion(true), { once: true });
 }
@@ -180,3 +194,18 @@ if (shotLinks.length && lightbox) {
     else if (event.key === 'ArrowRight') showShot(active + 1);
   });
 }
+
+// Optional GA4 conversion events (no-op unless gtag is enabled in site.json)
+function track(name, params = {}) {
+  if (typeof window.gtag === 'function') window.gtag('event', name, params);
+}
+document.addEventListener('click', event => {
+  const cta = event.target.closest('[data-steam-cta]');
+  if (cta) track('cta_click', { label: cta.textContent.trim(), href: cta.getAttribute('href') || '' });
+  const social = event.target.closest('.footer-social a, .link-list a.social');
+  if (social) track('social_click', { network: social.textContent.trim(), href: social.getAttribute('href') || '' });
+  const pill = event.target.closest('.species-pill');
+  if (pill) track('field_guide_switch', { species: pill.dataset.species || '' });
+  const shot = event.target.closest('.shots-grid a.shot-card');
+  if (shot) track('screenshot_open', { shot: shot.querySelector('.shot-caption')?.textContent.trim() || '' });
+});
